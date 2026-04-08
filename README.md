@@ -98,31 +98,56 @@ O sistema seguirá uma arquitetura em camadas (MVC ou similar), com separação 
 
 ## 📂 Estrutura de Pastas
 
-project-root/
-│
-├── frontend/
-│ ├── src/
-│ │ ├── components/
-│ │ ├── pages/
-│ │ ├── services/
-│ │ ├── hooks/
-│ │ └── styles/
-│
-├── backend/
-│ ├── src/
-│ │ ├── controllers/
-│ │ ├── services/
-│ │ ├── models/
-│ │ ├── routes/
-│ │ ├── middlewares/
-│ │ └── utils/
-│
-├── docs/
-│ ├── requisitos/
-│ ├── diagramas/
-│ └── prototipos/
-│
-└── README.md
+  project-root/
+	
+  │
+	
+  ├── frontend/
+	
+  │ ├── src/
+	
+  │ │ ├── components/
+	
+  │ │ ├── pages/
+	
+  │ │ ├── services/
+	
+  │ │ ├── hooks/
+	
+  │ │ └── styles/
+	
+  │
+	
+  ├── backend/
+	
+  │ ├── src/
+	
+  │ │ ├── controllers/
+	
+  │ │ ├── services/
+	
+  │ │ ├── models/
+	
+  │ │ ├── routes/
+	
+  │ │ ├── middlewares/
+	
+  │ │ └── utils/
+	
+  │
+	
+  ├── docs/
+	
+  │ ├── requisitos/
+	
+  │ ├── diagramas/
+	
+  │ └── prototipos/
+	
+  │
+	
+  └── README.md
+	
 
 ## 🚀 Como Executar o Projeto
 
@@ -133,13 +158,17 @@ project-root/
 ### 🔧 Backend
 
 cd backend
+
 npm install
+
 npm run dev
 
 ### 🎨 Frontend
 
 cd frontend
+
 npm install
+
 npm run dev
 
 ## 🧪 Testes
@@ -150,10 +179,15 @@ Testes unitários e de integração
 ## 👨‍💻 Equipe
 
 Mirelle Geovanna - 12824125558
+
 Pedro Otávio - 12824129804
+
 Lucas da Fonseca Oliveira - 12824130078
+
 Pedro Quintiliano - 1282618357
+
 Paulo Ricardo - 12825216920
+
 
 ## 💡 Problema Resolvido
 
