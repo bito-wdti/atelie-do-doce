@@ -1,0 +1,28 @@
+{
+  "name": "atelie-do-doce",
+  "version": "1.0.0",
+  "description": "Sistema web para gerenciamento e realização de pedidos da confeitaria online, Ateliê do Doce, permitindo que clientes façam compras de forma prática e que gestores acompanhem métricas e pedidos em tempo real.",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "dev": "nodemon ./backend/src/index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bito-wdti/atelie-do-doce.git"
+  },
+  "author": "Pedro Quintiliano",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/bito-wdti/atelie-do-doce/issues"
+  },
+  "homepage": "https://github.com/bito-wdti/atelie-do-doce#readme",
+  "dependencies": {
+    "express": "^5.2.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14"
+  }
+}
