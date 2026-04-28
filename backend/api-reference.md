@@ -373,3 +373,219 @@ DELETE /api/orders/47
 
 ---
 
+## USUARIOS
+
+### POST /users
+Cria um novo usuário (cadastro). Retorna token automaticamente — usuário já fica logado.
+
+**Body:**
+```json
+{
+  "name": "João Silva",
+  "email": "joao@email.com",
+  "password": "Senha123@",
+  "role": "Cliente",
+  "avatar_url": null
+}
+```
+
+**Campos obrigatórios:** `name`, `email`, `password`
+
+**Validações:**
+- Email deve ter formato válido (`@` + domínio)
+- Email não pode estar cadastrado
+- Senha deve ter:
+  - Mínimo 8 caracteres
+  - Pelo menos 1 letra maiúscula
+  - Pelo menos 1 número
+  - Pelo menos 1 símbolo
+- Se `role` for diferente de `"Cliente"`, requer token de admin
+
+**Resposta (201):**
+```json
+{
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "user": {
+    "id": "9bcbbbed-d17a-4546-baab-f2557539a782",
+    "name": "João Silva",
+    "email": "joao@email.com",
+    "role": "Cliente",
+    "avatar_url": null,
+    "created_at": "2026-04-28T03:38:22.195030Z"
+  }
+}
+```
+
+**Erros possíveis:**
+
+- 400 (campos obrigatórios):
+```json
+{ "error": "Nome, email e senha são obrigatórios" }
+```
+
+- 400 (email inválido):
+```json
+{ "error": "Email inválido" }
+```
+
+- 409 (email já cadastrado):
+```json
+{ "error": "Email já cadastrado" }
+```
+
+- 400 (senha fraca):
+```json
+{
+  "errors": [
+    "Senha deve ter pelo menos 8 caracteres",
+    "Senha deve conter pelo menos uma letra maiúscula",
+    "Senha deve conter pelo menos um número",
+    "Senha deve conter pelo menos um símbolo"
+  ]
+}
+```
+
+- 401 (role restrito sem token):
+```json
+{ "error": "Token de autenticação não fornecido" }
+```
+
+- 403 (role restrito sem admin):
+```json
+{ "error": "Acesso negado. Apenas administradores." }
+```
+
+---
+
+### POST /users/login
+Faz login do usuário e retorna o JWT.
+
+**Body:**
+```json
+{
+  "email": "joao@email.com",
+  "password": "Senha123@"
+}
+```
+
+**Campos obrigatórios:** `email`, `password`
+
+**Resposta (200):**
+```json
+{
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "user": {
+    "id": "9bcbbbed-d17a-4546-baab-f2557539a782",
+    "name": "João Silva",
+    "email": "joao@email.com",
+    "role": "Cliente",
+    "avatar_url": null,
+    "created_at": "2026-04-28T03:38:22.195030Z"
+  }
+}
+```
+
+**Erros possíveis:**
+
+- 400:
+```json
+{ "error": "Email e senha são obrigatórios" }
+```
+
+- 401:
+```json
+{ "error": "Credenciais inválidas" }
+```
+
+---
+
+### GET /users/me 🔒
+Retorna os dados do usuário logado (exceto senha).
+
+**Headers:**
+```
+Authorization: Bearer <token>
+```
+
+**Resposta (200):**
+```json
+{
+  "id": "9bcbbbed-d17a-4546-baab-f2557539a782",
+  "name": "João Silva",
+  "email": "joao@email.com",
+  "role": "Cliente",
+  "avatar_url": null,
+  "created_at": "2026-04-28T03:38:22.195030Z"
+}
+```
+
+**Erros possíveis:**
+
+- 401:
+```json
+{ "error": "Token de autenticação não fornecido" }
+```
+```json
+{ "error": "Token inválido ou expirado" }
+```
+
+---
+
+### GET /users 🔒
+Lista todos os usuários (apenas admin). Aceita filtros via query string.
+
+**Headers:**
+```
+Authorization: Bearer <token_admin>
+```
+
+```
+GET /api/users
+GET /api/users?role=Cliente
+GET /api/users?startDate=2026-01-01&endDate=2026-04-28
+```
+
+**Parâmetros de query (opcionais):**
+- `role` — filtra por função do usuário
+- `startDate` — filtra usuários criados a partir desta data
+- `endDate` — filtra usuários criados até esta data
+
+**Resposta (200):**
+```json
+[
+  {
+    "id": "9bcbbbed-d17a-4546-baab-f2557539a782",
+    "name": "João Silva",
+    "email": "joao@email.com",
+    "role": "Cliente",
+    "avatar_url": null,
+    "created_at": "2026-04-28T03:38:22.195030Z"
+  },
+  {
+    "id": "8abbbbed-d17a-4546-baab-f2557539a781",
+    "name": "Maria Silva",
+    "email": "maria@email.com",
+    "role": "Admin",
+    "avatar_url": null,
+    "created_at": "2026-04-27T10:00:00.000000Z"
+  }
+]
+```
+
+**Erros possíveis:**
+
+- 401:
+```json
+{ "error": "Token de autenticação não fornecido" }
+```
+```json
+{ "error": "Token inválido ou expirado" }
+```
+
+- 403:
+```json
+{ "error": "Acesso negado. Apenas administradores." }
+```
+
+---
+

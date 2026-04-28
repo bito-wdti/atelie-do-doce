@@ -6,6 +6,7 @@ import authRoutes from './routes/authRoutes.js'
 import productRoutes from './routes/productRoutes.js'
 import orderRoutes from './routes/orderRoutes.js'
 import settingsRoutes from './routes/settingsRoutes.js'
+import userRoutes from './routes/userRoutes.js'
 import { errorHandler } from './middlewares/errorHandler.js'
 
 const app = express()
@@ -24,6 +25,7 @@ app.use('/api/auth', authRoutes)
 app.use('/api/products', productRoutes)
 app.use('/api/orders', orderRoutes)
 app.use('/api/settings', settingsRoutes)
+app.use('/api/users', userRoutes)
 
 // Health check
 app.get('/api/health', (req, res) => {

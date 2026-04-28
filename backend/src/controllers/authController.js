@@ -6,6 +6,7 @@ import bcrypt from 'bcryptjs'
 const ADMIN_PASSWORD_HASH = bcrypt.hashSync(process.env.ADMIN_PASSWORD || 'admin123', 10)
 
 export const AuthController = {
+
   // POST /api/auth/login
   async login(req, res) {
     try {
