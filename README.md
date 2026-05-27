@@ -290,3 +290,42 @@ O sistema melhora a experiência de compra de doces online e fornece ferramentas
 ## 📌 Status do Projeto
 
 🚧 Em fase de levantamento de requisitos e prototipagem.
+
+# Pedilivery
+
+Aplicacao de delivery com frontend React/Vite e backend Express em `backend`.
+
+## Requisitos
+
+- Node.js 22+
+- Projeto Supabase configurado
+- Variaveis baseadas em `.env.example` e `backend/.env.example`
+
+## Desenvolvimento
+
+```bash
+npm install
+npm --prefix backend install
+npm run dev
+```
+
+O script `npm run dev` inicia frontend e backend juntos. Para rodar separado:
+
+```bash
+npm run dev:frontend
+npm run dev:backend
+```
+
+## Verificacoes
+
+```bash
+npm run typecheck
+npm run build
+npm run check:backend
+npm audit --omit=dev
+npm --prefix backend audit --omit=dev
+```
+
+## Produção
+
+Nao publique arquivos `.env`. Configure `JWT_SECRET`, `ADMIN_PASSWORD`, `SUPABASE_URL`, `SUPABASE_SERVICE_KEY`, `FRONTEND_URL` e `VITE_API_URL` diretamente no provedor de deploy.

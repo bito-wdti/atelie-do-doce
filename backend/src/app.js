@@ -8,47 +8,58 @@ import orderRoutes from './routes/orderRoutes.js'
 import settingsRoutes from './routes/settingsRoutes.js'
 import userRoutes from './routes/userRoutes.js'
 import { errorHandler } from './middlewares/errorHandler.js'
+import { rateLimit, securityHeaders } from './middlewares/security.js'
 
 const app = express()
 const PORT = process.env.PORT || 3001
+const allowedOrigins = (process.env.FRONTEND_URL || 'http://localhost:5173,http://localhost:3000')
+  .split(',')
+  .map(origin => origin.trim())
+  .filter(Boolean)
 
-// ─── Middlewares globais ─────────────────────────────────────────────────────
+app.disable('x-powered-by')
+app.use(securityHeaders)
+app.use(rateLimit({ windowMs: 60000, max: 240, keyPrefix: 'api' }))
+
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  origin(origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) return callback(null, true)
+    return callback(new Error('Origem nao permitida pelo CORS'))
+  },
   credentials: true
 }))
 
-app.use(express.json({ limit: '10mb' })) // limit maior por causa de imagens base64
+app.use(express.json({ limit: '5mb' }))
 
-// ─── Rotas ───────────────────────────────────────────────────────────────────
+app.use((req, res, next) => {
+  req.requestId = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`
+  res.setHeader('X-Request-Id', req.requestId)
+  next()
+})
+
 app.use('/api/auth', authRoutes)
 app.use('/api/products', productRoutes)
 app.use('/api/orders', orderRoutes)
 app.use('/api/settings', settingsRoutes)
 app.use('/api/users', userRoutes)
 
-// Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() })
 })
 
-// ─── Erro 404 ────────────────────────────────────────────────────────────────
 app.use((req, res) => {
-  res.status(404).json({ error: `Rota ${req.method} ${req.path} não encontrada` })
+  res.status(404).json({ error: `Rota ${req.method} ${req.path} nao encontrada` })
 })
 
-// ─── Error handler global ────────────────────────────────────────────────────
 app.use(errorHandler)
 
-// ─── Iniciar servidor ────────────────────────────────────────────────────────
 app.listen(PORT, () => {
-  console.log(`✅ Pedilivery Backend rodando em http://localhost:${PORT}`)
-  console.log(`📋 Endpoints disponíveis:`)
-  console.log(`   GET  /api/health`)
-  console.log(`   POST /api/auth/login`)
-  console.log(`   GET  /api/products`)
-  console.log(`   POST /api/orders`)
-  console.log(`   GET  /api/settings`)
+  console.log(JSON.stringify({
+    level: 'info',
+    message: 'Pedilivery Backend iniciado',
+    port: PORT,
+    endpoints: ['/api/health', '/api/auth/login', '/api/products', '/api/orders', '/api/settings']
+  }))
 })
 
 export default app

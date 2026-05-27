@@ -1,44 +1,68 @@
 import jwt from 'jsonwebtoken'
+import { requiredEnv } from '../utils/env.js'
 
-// Verifica se o usuário está autenticado (qualquer usuário logado)
-export function requireAuth(req, res, next) {
+const JWT_SECRET = requiredEnv('JWT_SECRET', { minLength: 32, reject: ['pedilivery_secret'] })
+
+function getToken(req) {
   const authHeader = req.headers.authorization
+  if (!authHeader || !authHeader.startsWith('Bearer ')) return null
+  return authHeader.split(' ')[1]
+}
 
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ error: 'Token de autenticação não fornecido' })
+export function decodeToken(token) {
+  return jwt.verify(token, JWT_SECRET)
+}
+
+export function signToken(payload, options = {}) {
+  return jwt.sign(payload, JWT_SECRET, options)
+}
+
+export function requireAuth(req, res, next) {
+  const token = getToken(req)
+
+  if (!token) {
+    return res.status(401).json({ error: 'Autenticacao obrigatoria' })
   }
 
-  const token = authHeader.split(' ')[1]
-
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'pedilivery_secret')
-    req.user = decoded
+    req.user = decodeToken(token)
     next()
   } catch (err) {
-    return res.status(401).json({ error: 'Token inválido ou expirado' })
+    return res.status(401).json({ error: 'Sessao invalida ou expirada' })
   }
 }
 
-// Verifica se o usuário é administrador
 export function requireAdmin(req, res, next) {
-  const authHeader = req.headers.authorization
+  const token = getToken(req)
 
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ error: 'Token de autenticação não fornecido' })
+  if (!token) {
+    return res.status(401).json({ error: 'Autenticacao obrigatoria' })
   }
 
-  const token = authHeader.split(' ')[1]
-
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'pedilivery_secret')
-    
-    if (decoded.role !== 'Admin') {
-      return res.status(403).json({ error: 'Acesso negado. Apenas administradores.' })
+    const decoded = decodeToken(token)
+
+    if (!['admin', 'Admin'].includes(decoded.role)) {
+      return res.status(403).json({ error: 'Acesso negado' })
     }
-    
+
     req.admin = decoded
     next()
   } catch (err) {
-    return res.status(401).json({ error: 'Token inválido ou expirado' })
+    return res.status(401).json({ error: 'Sessao invalida ou expirada' })
   }
+}
+
+export function optionalAdmin(req, res, next) {
+  const token = getToken(req)
+  if (!token) return next()
+
+  try {
+    const decoded = decodeToken(token)
+    if (['admin', 'Admin'].includes(decoded.role)) req.admin = decoded
+  } catch (err) {
+    req.admin = null
+  }
+
+  next()
 }
