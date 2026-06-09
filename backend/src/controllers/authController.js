@@ -1,30 +1,29 @@
 import jwt from 'jsonwebtoken'
 import bcrypt from 'bcryptjs'
+import { requiredEnv } from '../utils/env.js'
 
-// Em produção, a senha ficaria no banco. 
-// Por ora, usamos a variável de ambiente ADMIN_PASSWORD.
-const ADMIN_PASSWORD_HASH = bcrypt.hashSync(process.env.ADMIN_PASSWORD || 'admin123', 10)
+const ADMIN_PASSWORD = requiredEnv('ADMIN_PASSWORD', { reject: ['admin123', 'password', '123456'] })
+const JWT_SECRET = requiredEnv('JWT_SECRET', { minLength: 32, reject: ['pedilivery_secret'] })
+const ADMIN_PASSWORD_HASH = bcrypt.hashSync(ADMIN_PASSWORD, 10)
 
 export const AuthController = {
-
-  // POST /api/auth/login
   async login(req, res) {
     try {
       const { password } = req.body
 
       if (!password) {
-        return res.status(400).json({ error: 'Senha é obrigatória' })
+        return res.status(400).json({ error: 'Senha obrigatoria' })
       }
 
       const isValid = bcrypt.compareSync(password, ADMIN_PASSWORD_HASH)
 
       if (!isValid) {
-        return res.status(401).json({ error: 'Senha incorreta' })
+        return res.status(401).json({ error: 'Credenciais invalidas' })
       }
 
       const token = jwt.sign(
         { role: 'admin' },
-        process.env.JWT_SECRET || 'pedilivery_secret',
+        JWT_SECRET,
         { expiresIn: '8h' }
       )
 
@@ -34,9 +33,7 @@ export const AuthController = {
     }
   },
 
-  // POST /api/auth/verify
   async verify(req, res) {
-    // O middleware já verificou o token, se chegou aqui é válido
     return res.json({ valid: true, role: req.admin.role })
   }
 }

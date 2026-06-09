@@ -1,0 +1,10 @@
+{
+  "name": "Karolayne Doces",
+  "short_name": "Karol Doces",
+  "description": "Loja de doces artesanais",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FDFBFC",
+  "theme_color": "#FE5B95",
+  "icons": []
+}

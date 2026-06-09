@@ -1,7 +1,6 @@
 import { supabase } from '../config/supabase.js'
 
 export const OrderModel = {
-  // Buscar todos os pedidos com filtros
   async findAll({ status, search, startDate, endDate, limit = 100 } = {}) {
     let query = supabase
       .from('orders')
@@ -11,6 +10,7 @@ export const OrderModel = {
           id,
           quantity,
           unit_price,
+          observation,
           product_name,
           product:products (id, name, img)
         )
@@ -23,7 +23,12 @@ export const OrderModel = {
     }
 
     if (search) {
-      query = query.ilike('customer_name', `%${search}%`)
+      const term = String(search).trim()
+      if (/^\d+$/.test(term)) {
+        query = query.or(`id.eq.${term},customer_name.ilike.%${term}%`)
+      } else {
+        query = query.ilike('customer_name', `%${term}%`)
+      }
     }
 
     if (startDate) {
@@ -41,7 +46,6 @@ export const OrderModel = {
     return data
   },
 
-  // Buscar pedido por ID
   async findById(id) {
     const { data, error } = await supabase
       .from('orders')
@@ -51,6 +55,7 @@ export const OrderModel = {
           id,
           quantity,
           unit_price,
+          observation,
           product_name,
           product:products (id, name, img)
         )
@@ -62,9 +67,7 @@ export const OrderModel = {
     return data
   },
 
-  // Criar pedido com seus itens (transação)
   async create({ customer_name, customer_phone, total_amount, status, payment_method, delivery_address, notes, items }) {
-    // 1. Criar o pedido
     const { data: order, error: orderError } = await supabase
       .from('orders')
       .insert([{
@@ -81,28 +84,31 @@ export const OrderModel = {
 
     if (orderError) throw orderError
 
-    // 2. Criar os itens do pedido
-    if (items && items.length > 0) {
-      const orderItems = items.map(item => ({
-        order_id: order.id,
-        product_id: item.product_id || null,
-        quantity: item.quantity,
-        unit_price: item.unit_price,
-        product_name: item.product_name
-      }))
+    try {
+      if (items && items.length > 0) {
+        const orderItems = items.map(item => ({
+          order_id: order.id,
+          product_id: item.product_id,
+          quantity: item.quantity,
+          unit_price: item.unit_price,
+          product_name: item.product_name,
+          observation: item.observation || null
+        }))
 
-      const { error: itemsError } = await supabase
-        .from('order_items')
-        .insert(orderItems)
+        const { error: itemsError } = await supabase
+          .from('order_items')
+          .insert(orderItems)
 
-      if (itemsError) throw itemsError
+        if (itemsError) throw itemsError
+      }
+    } catch (err) {
+      await supabase.from('orders').delete().eq('id', order.id)
+      throw err
     }
 
-    // 3. Retornar pedido completo
     return await OrderModel.findById(order.id)
   },
 
-  // Atualizar status do pedido
   async updateStatus(id, status) {
     const { data, error } = await supabase
       .from('orders')
@@ -115,7 +121,6 @@ export const OrderModel = {
     return data
   },
 
-  // Deletar pedido
   async delete(id) {
     const { error } = await supabase
       .from('orders')
@@ -126,7 +131,6 @@ export const OrderModel = {
     return true
   },
 
-  // Métricas para o dashboard
   async getMetrics({ startDate, endDate } = {}) {
     let query = supabase
       .from('orders')
@@ -134,7 +138,8 @@ export const OrderModel = {
 
     if (startDate) query = query.gte('created_at', new Date(startDate).toISOString())
     if (endDate) {
-      const end = new Date(endDate); end.setHours(23, 59, 59, 999)
+      const end = new Date(endDate)
+      end.setHours(23, 59, 59, 999)
       query = query.lte('created_at', end.toISOString())
     }
 

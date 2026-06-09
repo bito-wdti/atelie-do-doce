@@ -1,8 +1,15 @@
 export function errorHandler(err, req, res, next) {
-  console.error(`[${new Date().toISOString()}] ERROR:`, err.message)
-
   const status = err.status || 500
-  const message = err.message || 'Erro interno no servidor'
+  const safeMessage = status >= 500 ? 'Erro interno no servidor' : err.message
 
-  return res.status(status).json({ error: message })
+  console.error(JSON.stringify({
+    level: 'error',
+    requestId: req.requestId,
+    method: req.method,
+    path: req.path,
+    status,
+    message: err.message
+  }))
+
+  return res.status(status).json({ error: safeMessage, requestId: req.requestId })
 }

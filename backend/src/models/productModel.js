@@ -1,11 +1,15 @@
 import { supabase } from '../config/supabase.js'
 
+function stripUndefined(fields) {
+  return Object.fromEntries(Object.entries(fields).filter(([, value]) => value !== undefined))
+}
+
 export const ProductModel = {
-  // Buscar todos os produtos (com filtros opcionais)
   async findAll({ category, search, status } = {}) {
     let query = supabase
       .from('products')
       .select('*')
+      .order('order_index', { ascending: true, nullsFirst: false })
       .order('id', { ascending: true })
 
     if (category && category !== 'Todos') {
@@ -21,11 +25,30 @@ export const ProductModel = {
     }
 
     const { data, error } = await query
-    if (error) throw error
-    return data
+    if (!error) return data
+
+    let fallbackQuery = supabase
+      .from('products')
+      .select('*')
+      .order('id', { ascending: true })
+
+    if (category && category !== 'Todos') {
+      fallbackQuery = fallbackQuery.eq('category', category)
+    }
+
+    if (search) {
+      fallbackQuery = fallbackQuery.ilike('name', `%${search}%`)
+    }
+
+    if (status) {
+      fallbackQuery = fallbackQuery.eq('stock', status)
+    }
+
+    const { data: fallbackData, error: fallbackError } = await fallbackQuery
+    if (fallbackError) throw error
+    return fallbackData
   },
 
-  // Buscar produto por ID
   async findById(id) {
     const { data, error } = await supabase
       .from('products')
@@ -37,11 +60,23 @@ export const ProductModel = {
     return data
   },
 
-  // Criar produto
-  async create({ name, detail, category, price, stock, img }) {
+  async findByIds(ids) {
+    const uniqueIds = [...new Set(ids.map(id => Number(id)).filter(Number.isInteger))]
+    if (uniqueIds.length === 0) return []
+
     const { data, error } = await supabase
       .from('products')
-      .insert([{ name, detail, category, price, stock, img }])
+      .select('*')
+      .in('id', uniqueIds)
+
+    if (error) throw error
+    return data
+  },
+
+  async create(fields) {
+    const { data, error } = await supabase
+      .from('products')
+      .insert([stripUndefined(fields)])
       .select()
       .single()
 
@@ -49,11 +84,10 @@ export const ProductModel = {
     return data
   },
 
-  // Atualizar produto
   async update(id, fields) {
     const { data, error } = await supabase
       .from('products')
-      .update(fields)
+      .update(stripUndefined(fields))
       .eq('id', id)
       .select()
       .single()
@@ -62,7 +96,6 @@ export const ProductModel = {
     return data
   },
 
-  // Deletar produto
   async delete(id) {
     const { error } = await supabase
       .from('products')
@@ -73,23 +106,22 @@ export const ProductModel = {
     return true
   },
 
-  // Buscar categorias únicas
   async getCategories() {
     const { data, error } = await supabase
       .from('products')
       .select('category')
 
     if (error) throw error
-    const unique = [...new Set(data.map(p => p.category).filter(Boolean))]
-    return unique
+    return [...new Set(data.map(p => p.category).filter(Boolean))]
   },
 
-  // Atualizar ordem dos produtos (drag & drop)
   async updateOrder(orderedIds) {
     const updates = orderedIds.map((id, index) =>
-      supabase.from('products').update({ order_index: index }).eq('id', id)
+      supabase.from('products').update({ order_index: index + 1 }).eq('id', id)
     )
-    await Promise.all(updates)
+    const results = await Promise.all(updates)
+    const failed = results.find(result => result.error)
+    if (failed) throw failed.error
     return true
   }
 }

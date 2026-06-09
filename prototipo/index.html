@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Karolayne Doces</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Nunito:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              primary: "#FF69B4", // Client Pink
+              "primary-dark": "#ee2b5b", // Admin Red/Pink
+              secondary: "#FFB6C1",
+              "bg-light": "#FFF0F5",
+              "admin-bg": "#f8f6f6",
+              "admin-sidebar": "#ffffff",
+            },
+            fontFamily: {
+              sans: ['Nunito', 'sans-serif'],
+              display: ['Poppins', 'sans-serif'],
+            },
+          },
+        },
+      };
+    </script>
+    <style>
+      /* Hide scrollbar for Chrome, Safari and Opera */
+      .no-scrollbar::-webkit-scrollbar {
+        display: none;
+      }
+      /* Hide scrollbar for IE, Edge and Firefox */
+      .no-scrollbar {
+        -ms-overflow-style: none; /* IE and Edge */
+        scrollbar-width: none; /* Firefox */
+      }
+    </style>
+    <script type="importmap">
+      {
+        "imports": {
+          "react/": "https://esm.sh/react@^19.2.4/",
+          "react": "https://esm.sh/react@^19.2.4",
+          "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
+          "react-router-dom": "https://esm.sh/react-router-dom@^7.13.0",
+          "recharts": "https://esm.sh/recharts@^3.7.0",
+          "lucide-react": "https://esm.sh/lucide-react@^0.563.0"
+        }
+      }
+    </script>
+    <link rel="stylesheet" href="/index.css" />
+  </head>
+  <body class="bg-bg-light text-gray-800 antialiased">
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
+  </body>
+</html>

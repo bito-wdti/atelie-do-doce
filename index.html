@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- Cache Busting Headers -->
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+
+  <title>Ateliê do Doce</title>
+  <link rel="manifest" href="/manifest.json" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Nunito:wght@300;400;500;600;700;800&family=Josefin+Sans:wght@300;400;500;600;700&display=swap"
+    rel="stylesheet" />
+
+  <style>
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #fe5b9533;
+      border-radius: 10px;
+    }
+
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes slideInUp {
+      0% {
+        transform: translateY(100%);
+      }
+
+      100% {
+        transform: translateY(0);
+      }
+    }
+
+    .animate-slide-in-up {
+      animation: slideInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+  </style>
+  <link rel="stylesheet" href="/index.css" />
+</head>
+
+<body class="bg-bg-light text-gray-800 antialiased">
+  <div id="root"></div>
+  <script type="module" src="/index.tsx"></script>
+</body>
+
+</html>
