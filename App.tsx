@@ -401,7 +401,7 @@ const AdminLayout = ({ children }: { children?: React.ReactNode }) => {
 export default function App() {
   return (
     <HashRouter>
-      <Toaster position="top-right" toastOptions={{ duration: 2500 }}>
+      <Toaster position="bottom-center" toastOptions={{ duration: 2500 }}>
         {(t) => (
           <div
             onClick={() => toast.dismiss(t.id)}
@@ -410,6 +410,7 @@ export default function App() {
               transform: t.visible ? 'translateY(0)' : 'translateY(-20px)',
               transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
               display: 'flex',
+              fontSize: '20px',
               alignItems: 'center',
               background: t.type === 'success' ? '#4F46E5' : (t.type === 'error' ? '#E11D48' : '#333333'),
               color: '#FFFFFF',
@@ -419,7 +420,8 @@ export default function App() {
               border: 'none',
               cursor: 'pointer',
               fontFamily: 'Montserrat, sans-serif',
-              minWidth: '280px',
+              minHeight: '72px', 
+              minWidth: '330px',
               zIndex: 9999
             }}
           >
@@ -430,7 +432,7 @@ export default function App() {
                 </div>
               ) : (t.type === 'error' ? <X className="w-5 h-5 text-white" /> : <Bell className="w-5 h-5 text-white" />)}
             </div>
-            <div style={{ fontSize: '14px', fontWeight: 600, flex: 1, letterSpacing: '-0.015em' }}>
+            <div style={{ fontSize: '20px', fontWeight: 600, flex: 1, letterSpacing: '-0.015em' }}>
               {String(t.message)}
             </div>
             <div style={{ marginLeft: '12px', opacity: 0.6, display: 'flex' }}>
