@@ -8,6 +8,7 @@ router.post('/', requireAuth, OrderController.create)
 
 router.get('/', requireAdmin, OrderController.index)
 router.get('/metrics/summary', requireAdmin, OrderController.metrics)
+router.get('/my', requireAuth, OrderController.myOrders)
 router.get('/:id', optionalAdmin, OrderController.show)
 
 router.patch('/:id/status', requireAdmin, OrderController.updateStatus)

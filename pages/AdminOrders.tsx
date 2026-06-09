@@ -92,7 +92,7 @@ export default function AdminOrders() {
 
   const filteredOrders = orders.filter(order => {
     const matchesStatus = filterStatus === 'Todos' || order.status === filterStatus;
-    const matchesSearch = order.customer_name?.toLowerCase().includes(searchTerm.toLowerCase()) || order.id.toString().includes(searchTerm);
+    const matchesSearch = !searchTerm || order.user?.name?.toLowerCase().includes(searchTerm.toLowerCase()) || order.id.toString().includes(searchTerm);
     return matchesStatus && matchesSearch;
   });
 
@@ -139,8 +139,9 @@ export default function AdminOrders() {
       const fileName = 'Relatorio_Pedidos_' + new Date().toISOString().split('T')[0] + '.csv';
       downloadCsv(fileName, filteredOrders.map((order) => ({
         'ID': '#' + order.id,
-        'Cliente': order.customer_name || '',
-        'Telefone': order.customer_phone || '-',
+        'Cliente': order.user?.name || '',
+        'Telefone': order.user?.telefone || '-',
+        'Email': order.user?.email || '-',
         'Data': new Date(order.created_at).toLocaleDateString('pt-BR'),
         'Horario': new Date(order.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
         'Total': Number(order.total_amount || 0).toFixed(2),
@@ -360,12 +361,12 @@ export default function AdminOrders() {
                   <div className="flex justify-between items-start mb-4">
                     <div className="flex items-center gap-4 min-w-0">
                       <div className="w-14 h-14 rounded-full bg-indigo-50/50 text-primary flex items-center justify-center text-lg font-semibold shrink-0 ">
-                        {order.customer_name?.substring(0, 2)}
+                        {order.user?.name?.substring(0, 2)}
                       </div>
                       <div className="min-w-0">
                         <span className="text-gray-400 text-[10px] font-semibold  tracking-widest block mt-1">PEDIDO #{order.id}</span>
-                        <h3 className="text-gray-900 text-base font-semibold leading-relaxed truncate font-display">{order.customer_name}</h3>
-                        <p className="text-gray-400 text-sm leading-relaxed truncate">{order.customer_phone}</p>
+                        <h3 className="text-gray-900 text-base font-semibold leading-relaxed truncate font-display">{order.user?.name}</h3>
+                        <p className="text-gray-400 text-sm leading-relaxed truncate">{order.user?.telefone}</p>
                       </div>
                     </div>
                     <span className={`px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1.5 ${getStatusColor(order.status)} shrink-0 `}>
@@ -413,11 +414,11 @@ export default function AdminOrders() {
                         <td className="pl-16 pr-6 py-5">
                           <div className="flex items-center gap-4">
                             <div className="w-9 h-9 rounded-xl bg-indigo-50/50 text-primary flex items-center justify-center text-sm shrink-0  font-semibold">
-                              {order.customer_name?.substring(0, 2)}
+                              {order.user?.name?.substring(0, 2)}
                             </div>
                             <div className="flex flex-col text-left min-w-0">
-                              <span className="text-base text-gray-900 font-medium leading-relaxed truncate">{order.customer_name}</span>
-                              <span className="text-sm text-gray-400 font-semibold truncate">{order.customer_phone || '-'}</span>
+                              <span className="text-base text-gray-900 font-medium leading-relaxed truncate">{order.user?.name}</span>
+                              <span className="text-sm text-gray-400 font-semibold truncate">{order.user?.telefone || '-'}</span>
                             </div>
                           </div>
                         </td>
@@ -500,11 +501,11 @@ export default function AdminOrders() {
                   {/* Customer Info */}
                   <div className="p-5 flex items-center gap-4">
                     <div className="w-14 h-14 rounded-xl bg-indigo-50/50 text-primary flex items-center justify-center text-lg font-semibold">
-                      {selectedOrder.customer_name?.substring(0, 2).toUpperCase()}
+                      {selectedOrder.user?.name?.substring(0, 2).toUpperCase()}
                     </div>
                     <div className="flex flex-col min-w-0">
-                      <span className="text-gray-900 text-base leading-relaxed font-semibold truncate">{selectedOrder.customer_name}</span>
-                      <span className="text-gray-400 text-base leading-relaxed mt-1 truncate">{selectedOrder.customer_phone || 'Sem telefone'}</span>
+                      <span className="text-gray-900 text-base leading-relaxed font-semibold truncate">{selectedOrder.user?.name}</span>
+                      <span className="text-gray-400 text-base leading-relaxed mt-1 truncate">{selectedOrder.user?.telefone || 'Sem telefone'}</span>
                     </div>
                   </div>
 
@@ -572,8 +573,8 @@ export default function AdminOrders() {
 
             <div className="border-b border-gray-100 pb-4 mb-4">
               <p className="text-xs  text-gray-400 font-semibold mb-2">Cliente</p>
-              <p className="font-semibold">{selectedOrder.customer_name}</p>
-              <p className="text-sm">{selectedOrder.customer_phone || 'Sem telefone'}</p>
+              <p className="font-semibold">{selectedOrder.user?.name}</p>
+              <p className="text-sm">{selectedOrder.user?.telefone || 'Sem telefone'}</p>
               <p className="text-sm mt-1"><strong>Endereço:</strong> {selectedOrder.delivery_address || 'Retirada na Loja'}</p>
               <p className="text-sm mt-1"><strong>Pagamento:</strong> {selectedOrder.payment_method || 'Não informado'}</p>
             </div>

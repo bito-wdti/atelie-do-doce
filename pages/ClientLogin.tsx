@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import { Lock, Mail, ArrowRight, ChefHat } from "lucide-react";
 import { toast } from "react-hot-toast";
 
@@ -10,6 +10,8 @@ export default function ClientLogin() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
+  const redirectTo = (location.state as any)?.from || '/profile';
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,7 +35,7 @@ export default function ClientLogin() {
       window.dispatchEvent(new Event("user-auth-changed"));
 
       toast.success(`Bem-vindo, ${body.user?.name || ""}!`);
-      navigate("/profile");
+      navigate(redirectTo);
     } catch (error: any) {
       toast.error(error.message || "E-mail ou senha incorretos.");
     } finally {
@@ -45,14 +47,14 @@ export default function ClientLogin() {
     <div className="min-h-screen bg-white flex flex-col items-center justify-center p-6 animate-fade-in font-sans">
       <div className="w-full max-w-sm space-y-8 text-center">
         {/* Logo */}
-        <div className="flex flex-col items-center gap-4 mb-10">
-          <div className="p-6 rounded-[2rem] bg-primary text-white shadow-2xl shadow-primary/30 flex items-center justify-center shrink-0">
+        <Link to="/" className="flex flex-col items-center gap-4 mb-10 group">
+          <div className="p-6 rounded-[2rem] bg-primary text-white shadow-2xl shadow-primary/30 flex items-center justify-center shrink-0 group-hover:bg-primary/80 transition-colors">
             <ChefHat className="w-16 h-16" />
           </div>
-          <p className="text-gray-500 text-base leading-relaxed mt-4">
+          <p className="text-gray-500 text-base leading-relaxed mt-4 group-hover:text-primary transition-colors">
             Ateliê do Doce
           </p>
-        </div>
+        </Link>
 
         <div className="space-y-4">
           <form onSubmit={handleLogin} className="space-y-4">

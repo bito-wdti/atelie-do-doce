@@ -15,7 +15,7 @@ export function queryString(params: Record<string, QueryValue> = {}) {
 }
 
 export async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
-  const token = localStorage.getItem('adminToken');
+  const token = localStorage.getItem('userToken') || localStorage.getItem('adminToken');
   const controller = new AbortController();
   const timeout = window.setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
   const headers: HeadersInit = {

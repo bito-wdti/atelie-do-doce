@@ -11,6 +11,7 @@ const router = Router()
 
 router.get('/', requireAdmin, userController.findAllUsers)
 router.get('/me', requireAuth, userController.getMe)
+router.patch('/me', requireAuth, userController.updateMe)
 
 router.post('/',
   emailMiddleware.validateEmail,

@@ -132,6 +132,28 @@ export const OrderModel = {
     return true
   },
 
+  async findByUserId(userId, limit = 5) {
+    const { data, error } = await supabase
+      .from('orders')
+      .select(`
+        *,
+        order_items (
+          id,
+          quantity,
+          unit_price,
+          observation,
+          product_name,
+          product:products (id, name, img)
+        )
+      `)
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(limit)
+
+    if (error) throw error
+    return data
+  },
+
   async getMetrics({ startDate, endDate } = {}) {
     let query = supabase
       .from('orders')

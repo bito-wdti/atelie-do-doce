@@ -97,7 +97,6 @@ export const userController = {
   // GET /api/users/me — dados do usuário logado
   async getMe(req, res) {
     try {
-      // req.user é preenchido pelo middleware requireAuth
       const userId = req.user.id
 
       const user = await userModel.findById(userId)
@@ -106,7 +105,70 @@ export const userController = {
         return res.status(404).json({ error: 'Usuário não encontrado' })
       }
 
-      // Não retornar a senha
+      const { password: _, ...userWithoutPassword } = user
+
+      return res.json(userWithoutPassword)
+    } catch (error) {
+      return res.status(500).json({ error: error.message })
+    }
+  },
+
+  // PATCH /api/users/me — atualiza dados permitidos do usuário logado
+  async updateMe(req, res) {
+    try {
+      const userId = req.user.id
+      const { delivery_address, name, telefone, avatar_url, currentPassword, newPassword } = req.body
+
+      // Validar telefone se fornecido
+      if (telefone !== undefined && !/^\(\d{2}\) \d{5}-\d{4}$/.test(telefone.trim())) {
+        return res.status(400).json({ error: 'Telefone deve estar no formato (XX) XXXXX-XXXX' })
+      }
+
+      // Validar CEP dentro do delivery_address se fornecido
+      if (delivery_address !== undefined) {
+        try {
+          const addr = JSON.parse(delivery_address)
+          if (!addr.cep || !/^\d{5}-\d{3}$/.test(addr.cep)) {
+            return res.status(400).json({ error: 'CEP inválido. Use o formato 00000-000' })
+          }
+        } catch {
+          return res.status(400).json({ error: 'Formato de endereço inválido' })
+        }
+      }
+
+      // Validar nova senha se fornecida
+      if (newPassword) {
+        if (!currentPassword) {
+          return res.status(400).json({ error: 'Senha atual obrigatória para alterar a senha' })
+        }
+        const pwErrors = []
+        if (newPassword.length < 8) pwErrors.push('Mínimo 8 caracteres')
+        if (!/[A-Z]/.test(newPassword)) pwErrors.push('Uma letra maiúscula')
+        if (!/[0-9]/.test(newPassword)) pwErrors.push('Um número')
+        if (!/[!@#$%^&*(),.?":{}|<>]/.test(newPassword)) pwErrors.push('Um símbolo especial')
+        if (pwErrors.length > 0) {
+          return res.status(400).json({ error: `Senha não atende aos requisitos: ${pwErrors.join(', ')}` })
+        }
+        const currentUser = await userModel.findById(userId)
+        const isValid = await bcrypt.compare(currentPassword, currentUser.password)
+        if (!isValid) {
+          return res.status(400).json({ error: 'Senha atual incorreta' })
+        }
+      }
+
+      const allowed = {}
+      if (delivery_address !== undefined) allowed.delivery_address = delivery_address
+      if (name !== undefined && name.trim()) allowed.name = name.trim()
+      if (telefone !== undefined) allowed.telefone = telefone.trim()
+      if (avatar_url !== undefined) allowed.avatar_url = avatar_url
+      if (newPassword) allowed.password = await bcrypt.hash(newPassword, 10)
+
+      if (Object.keys(allowed).length === 0) {
+        return res.status(400).json({ error: 'Nenhum campo válido para atualizar' })
+      }
+
+      const user = await userModel.updateById(userId, allowed)
+
       const { password: _, ...userWithoutPassword } = user
 
       return res.json(userWithoutPassword)

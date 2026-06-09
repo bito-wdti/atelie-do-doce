@@ -71,6 +71,21 @@ export const userModel = {
         }
 
         return data || null
+    },
+
+    // Atualizar campos permitidos do usuário
+    async updateById(id, fields) {
+        const { data, error } = await supabase
+            .from('users')
+            .update(fields)
+            .eq('id', id)
+            .select()
+
+        if (error) {
+            throw new Error(error.message)
+        }
+
+        return data[0]
     }
 
 }

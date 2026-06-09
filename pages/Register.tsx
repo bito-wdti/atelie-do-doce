@@ -131,8 +131,22 @@ export default function Register() {
         throw new Error(msg);
       }
 
+      const loginRes = await fetch(`${API_URL}/users/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const loginBody = await loginRes.json().catch(() => ({}));
+
+      if (loginRes.ok) {
+        localStorage.setItem("userToken", loginBody.token);
+        localStorage.setItem("userName", loginBody.user?.name || name);
+        window.dispatchEvent(new Event("user-auth-changed"));
+      }
+
       toast.success("Cadastro realizado com sucesso!");
-      navigate("/login");
+      navigate("/");
     } catch (error: any) {
       toast.error(error.message || "Erro ao cadastrar. Tente novamente.");
     } finally {
@@ -150,16 +164,16 @@ export default function Register() {
   return (
     <div className="min-h-screen bg-white flex flex-col items-center justify-center p-6 animate-fade-in font-sans">
       <div className="w-full max-w-sm space-y-8 text-center">
-        <div className="flex flex-col items-center gap-4 mb-10">
-          <div className="p-6 rounded-[2rem] bg-primary text-white shadow-2xl shadow-primary/30 flex items-center justify-center shrink-0">
+        <Link to="/" className="flex flex-col items-center gap-4 mb-10 group">
+          <div className="p-6 rounded-[2rem] bg-primary text-white shadow-2xl shadow-primary/30 flex items-center justify-center shrink-0 group-hover:bg-primary/80 transition-colors">
             <ChefHat className="w-16 h-16" />
           </div>
           <div>
-            <p className="text-gray-500 text-base leading-relaxed mt-4">
+            <p className="text-gray-500 text-base leading-relaxed mt-4 group-hover:text-primary transition-colors">
               Ateliê do Doce
             </p>
           </div>
-        </div>
+        </Link>
 
         <div className="space-y-4">
           <form onSubmit={handleRegister} className="space-y-4">

@@ -66,6 +66,15 @@ async function buildOrderItems(rawItems, deliveryAddress) {
 }
 
 export const OrderController = {
+  async myOrders(req, res) {
+    try {
+      const orders = await OrderModel.findByUserId(req.user.id, 5)
+      return res.json(orders)
+    } catch (err) {
+      return res.status(500).json({ error: 'Erro ao buscar pedidos' })
+    }
+  },
+
   async index(req, res) {
     try {
       const { status, search, startDate, endDate, limit } = req.query

@@ -3,11 +3,13 @@ import {
   ArrowLeft, MapPin, Clock, CreditCard, Banknote,
   ChevronDown, ChevronUp, Check, AlertCircle,
   ShoppingBag, Truck, Store, Calendar, X,
-  Search, ChevronLeft, ChevronRight, Phone, Pencil, Edit3, Map
+  Search, ChevronLeft, ChevronRight, Phone, Pencil, Edit3, Map, User
 } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { settingsApi } from '../services/api';
+
+const API_URL = (import.meta as any).env?.VITE_API_URL || 'http://localhost:3001/api';
 
 export default function ClientCheckout() {
   const navigate = useNavigate();
@@ -15,10 +17,10 @@ export default function ClientCheckout() {
   const [isOrderDetailsOpen, setIsOrderDetailsOpen] = useState(true);
   const [isStoreDetailsOpen, setIsStoreDetailsOpen] = useState(true);
   const [paymentMethod, setPaymentMethod] = useState<string | null>(null);
-  const [isEditingAddress, setIsEditingAddress] = useState(true);
 
   const [deliveryMethod, setDeliveryMethod] = useState<'entrega' | 'retirada'>('entrega');
   const [storeSettings, setStoreSettings] = useState<any>(null);
+  const [storeAddress, setStoreAddress] = useState<string>('');
   const [needsChange, setNeedsChange] = useState(false);
   const [changeAmount, setChangeAmount] = useState('');
   const [isEditingSchedule, setIsEditingSchedule] = useState(true);
@@ -36,6 +38,9 @@ export default function ClientCheckout() {
   // Refs for click outside
   const datePickerRef = useRef<HTMLDivElement>(null);
   const timePickerRef = useRef<HTMLDivElement>(null);
+
+  const [userData, setUserData] = useState<any>(null);
+  const [saveAsDefault, setSaveAsDefault] = useState(false);
 
   // Checkout States
   const [formData, setFormData] = useState({
@@ -67,18 +72,49 @@ export default function ClientCheckout() {
     setCartItems(savedCart);
 
     const savedForm = JSON.parse(localStorage.getItem('checkoutData') || '{}');
-    if (savedForm.fullName) setFormData(prev => ({ ...prev, ...savedForm }));
+    if (savedForm.cep) setFormData(prev => ({ ...prev, ...savedForm }));
     if (savedForm.deliveryMethod) setDeliveryMethod(savedForm.deliveryMethod);
     if (savedForm.isNow !== undefined) setIsNow(savedForm.isNow);
 
-    // Auto-close edit mode if data is complete on load
-    if (savedForm.fullName && savedForm.phone && savedForm.phone.length >= 14) {
-      if (savedForm.deliveryMethod === 'retirada') {
-        setIsEditingAddress(false);
-      } else if (savedForm.deliveryMethod === 'entrega' && savedForm.address && savedForm.cep && savedForm.number && savedForm.neighborhood) {
-        setIsEditingAddress(false);
-      }
+    // Fetch logged-in user data
+    const token = localStorage.getItem('userToken');
+    if (token) {
+      fetch(`${API_URL}/users/me`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+        .then(res => res.ok ? res.json() : null)
+        .then(user => {
+          if (user) {
+            setUserData(user);
+            let addr: any = null;
+            try { addr = user.delivery_address ? JSON.parse(user.delivery_address) : null; } catch { addr = null; }
+
+            // Sanitiza o campo address para remover número e bairro que podem
+            // ter sido embutidos pelo formato antigo ("Rua X, 412 - Emaús").
+            let cleanAddress = (addr?.address || '').trim();
+            if (addr?.number && cleanAddress.includes(`, ${addr.number}`)) {
+              cleanAddress = cleanAddress.substring(0, cleanAddress.indexOf(`, ${addr.number}`));
+            }
+            if (addr?.neighborhood && cleanAddress.endsWith(` - ${addr.neighborhood}`)) {
+              cleanAddress = cleanAddress.slice(0, -(` - ${addr.neighborhood}`).length);
+            }
+            cleanAddress = cleanAddress.replace(/[,\s]+$/, '').trim();
+
+            setFormData(prev => ({
+              ...prev,
+              fullName: user.name || prev.fullName,
+              phone: user.telefone || prev.phone,
+              cep: addr?.cep || '',
+              address: cleanAddress,
+              number: addr?.number || '',
+              complement: addr?.complement || '',
+              neighborhood: addr?.neighborhood || '',
+            }));
+          }
+        })
+        .catch(() => null);
     }
+
 
     const handleClickOutside = (event: MouseEvent | TouchEvent) => {
       if (datePickerRef.current && !datePickerRef.current.contains(event.target as Node)) {
@@ -99,7 +135,10 @@ export default function ClientCheckout() {
   async function fetchStoreSettings() {
     try {
       const data = await settingsApi.get();
-      if (data) setStoreSettings(data.payment_methods);
+      if (data) {
+        setStoreSettings(data.payment_methods);
+        if (data.address) setStoreAddress(data.address);
+      }
     } catch {
       setStoreSettings({ pix: { enabled: false }, card: { enabled: false }, money: { enabled: false } });
       toast.error('Nao foi possivel carregar as formas de pagamento.');
@@ -152,16 +191,6 @@ export default function ClientCheckout() {
       if (cleanCep.length === 8) handleCepLookup(cleanCep);
     } else if (name === 'phone') {
       setFormData(prev => ({ ...prev, [name]: formatPhone(value) }));
-    } else if (name === 'number') {
-      setFormData(prev => {
-        const street = prev.address.split(',')[0] || '';
-        const neighborhood = prev.address.includes(' - ') ? prev.address.split(' - ')[1] : '';
-        return {
-          ...prev,
-          [name]: value,
-          address: `${street}, ${value}${neighborhood ? ` - ${neighborhood}` : ''}`
-        };
-      });
     } else {
       setFormData(prev => ({ ...prev, [name]: value }));
     }
@@ -175,8 +204,8 @@ export default function ClientCheckout() {
       if (!data.erro) {
         setFormData(prev => ({
           ...prev,
-          address: data.logradouro && data.bairro ? `${data.logradouro}, - ${data.bairro}` : (data.logradouro ? `${data.logradouro}, ` : ''),
-          neighborhood: data.bairro,
+          address: data.logradouro || '',
+          neighborhood: data.bairro || '',
         }));
         toast.success('Endereço encontrado!', { id: 'cep' });
       } else {
@@ -193,23 +222,51 @@ export default function ClientCheckout() {
     return subtotal + deliveryFee;
   };
 
-  const handleFinishOrder = () => {
-    if (!formData.fullName) { toast.error('Informe seu nome completo'); return; }
-    if (!formData.phone || formData.phone.length < 14) { toast.error('Informe um telefone válido'); return; }
+  const handleFinishOrder = async () => {
+    const name = userData?.name || formData.fullName;
+    const phone = userData?.telefone || formData.phone;
+
+    if (!name) { toast.error('Informe seu nome completo'); return; }
+    if (!phone) { toast.error('Informe um telefone válido'); return; }
 
     if (deliveryMethod === 'entrega') {
       if (!formData.cep || !formData.address || !formData.number || !formData.neighborhood) {
         toast.error('Preencha todos os campos obrigatórios do endereço');
-        setIsEditingAddress(true);
         return;
       }
     }
     if (!paymentMethod) { toast.error('Selecione uma forma de pagamento'); return; }
 
+    if (saveAsDefault && deliveryMethod === 'entrega' && formData.cep.replace(/\D/g, '').length === 8) {
+      const token = localStorage.getItem('userToken');
+      if (token) {
+        try {
+          await fetch(`${API_URL}/users/me`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+            body: JSON.stringify({
+              delivery_address: JSON.stringify({
+                cep: formData.cep,
+                address: formData.address,
+                number: formData.number,
+                complement: formData.complement,
+                neighborhood: formData.neighborhood,
+              }),
+            }),
+          });
+          toast.success('Endereço salvo como padrão!');
+        } catch {
+          toast.error('Não foi possível salvar o endereço padrão.');
+        }
+      }
+    }
+
     const orderTime = isNow ? 'Agora' : `${selectedDate.toLocaleDateString('pt-BR')} às ${selectedTime}`;
 
     localStorage.setItem('checkoutData', JSON.stringify({
       ...formData,
+      fullName: name,
+      phone,
       paymentMethod,
       deliveryMethod,
       date: selectedDate.toLocaleDateString('pt-BR'),
@@ -231,9 +288,10 @@ export default function ClientCheckout() {
   const months = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
   const fullMonths = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
 
-  const isStep1Complete = deliveryMethod === 'retirada'
-    ? (formData.fullName && formData.phone.length >= 14)
-    : (formData.fullName && formData.phone.length >= 14 && formData.address && formData.cep && formData.number && formData.neighborhood);
+  const hasIdentity = !!(userData || (formData.fullName && formData.phone.length >= 14));
+  const isStep1Complete = hasIdentity && (deliveryMethod === 'retirada'
+    ? true
+    : !!(formData.address && formData.cep && formData.number && formData.neighborhood));
 
   return (
     <div className="min-h-screen bg-[#F9FAFB]">
@@ -382,67 +440,66 @@ export default function ClientCheckout() {
           </section>
           */}
 
-          <section className={`bg-white rounded-xl border border-gray-100 overflow-hidden relative z-0 ${isEditingAddress ? 'p-5 md:p-6' : 'p-4'}`}>
-            <div className={`flex justify-between items-center ${isEditingAddress ? 'mb-4' : 'mb-2'}`}>
-              <h2 className="text-lg md:text-xl font-semibold text-gray-800">{deliveryMethod === 'entrega' ? 'Endereço de entrega' : 'Dados para retirada'}</h2>
-              <div className="flex items-center gap-2">
-              </div>
-            </div>
-
-            {(isEditingAddress) ? (
-              <div className="space-y-4 animate-fade-in">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
-                  <input name="fullName" value={formData.fullName} onChange={handleInputChange} onFocus={() => { setShowDatePicker(false); setShowTimePicker(false); }} placeholder="Seu Nome *" className="w-full bg-white border border-gray-200/60 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary/40 rounded-xl py-3 px-4 text-base font-display font-medium text-gray-700 placeholder:text-gray-400 transition-all shadow-sm" />
-                  <input name="phone" value={formData.phone} onChange={handleInputChange} onFocus={() => { setShowDatePicker(false); setShowTimePicker(false); }} placeholder="Telefone*" className="w-full bg-white border border-gray-200/60 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary/40 rounded-xl py-3 px-4 text-base font-display font-medium text-gray-700 placeholder:text-gray-400 transition-all shadow-sm" />
+          {/* Card de dados do usuário logado */}
+          {userData && (
+            <section className="bg-white rounded-xl border border-gray-100 p-4">
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">Seus dados</p>
+              <div className="flex items-center gap-4">
+                <div className="w-11 h-11 rounded-xl bg-indigo-50 flex items-center justify-center shrink-0">
+                  <User className="w-5 h-5 text-primary" />
                 </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-gray-900 text-base leading-tight truncate">{userData.name}</p>
+                  <p className="text-sm text-gray-400 font-medium mt-0.5 flex items-center gap-1.5">
+                    <Phone className="w-3.5 h-3.5 shrink-0" />
+                    {userData.telefone || 'Sem telefone cadastrado'}
+                  </p>
+                </div>
+              </div>
+            </section>
+          )}
 
+          {deliveryMethod === 'retirada' ? (
+            <section className="bg-white rounded-xl border border-gray-100 p-4">
+              <h2 className="text-lg md:text-xl font-semibold text-gray-800 mb-3">Local de retirada</h2>
+              <div className="flex items-center gap-4">
+                <div className="w-11 h-11 rounded-xl bg-indigo-50 flex items-center justify-center shrink-0">
+                  <MapPin className="w-5 h-5 text-primary" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-gray-900 text-base leading-tight">Retirada na loja</p>
+                  <p className="text-sm text-gray-400 font-medium mt-0.5 truncate">
+                    {storeAddress || 'Endereço não configurado'}
+                  </p>
+                </div>
+              </div>
+            </section>
+          ) : (
+            <section className="bg-white rounded-xl border border-gray-100 p-5 md:p-6 relative z-0">
+              <h2 className="text-lg md:text-xl font-semibold text-gray-800 mb-4">Endereço de entrega</h2>
+              <div className="space-y-4">
                 <div className="grid grid-cols-1 gap-2.5">
                   <div className="grid grid-cols-2 gap-2.5">
                     <input name="cep" value={formData.cep} onChange={handleInputChange} onFocus={() => { setShowDatePicker(false); setShowTimePicker(false); }} placeholder="CEP*" className="w-full bg-white border border-gray-200/60 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary/40 rounded-xl py-3 px-4 text-base font-display font-medium text-gray-700 placeholder:text-gray-400 transition-all shadow-sm" maxLength={9} />
                     <input name="number" value={formData.number} onChange={handleInputChange} onFocus={() => { setShowDatePicker(false); setShowTimePicker(false); }} placeholder="Número *" className="w-full bg-white border border-gray-200/60 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary/40 rounded-xl py-3 px-4 text-base font-display font-medium text-gray-700 placeholder:text-gray-400 transition-all shadow-sm" />
                   </div>
-
                   <input name="address" value={formData.address} onChange={handleInputChange} onFocus={() => { setShowDatePicker(false); setShowTimePicker(false); }} placeholder="Rua / Avenida *" className="w-full bg-white border border-gray-200/60 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary/40 rounded-xl py-3 px-4 text-base font-display font-medium text-gray-700 placeholder:text-gray-400 transition-all shadow-sm" />
-
                   <input name="complement" value={formData.complement} onChange={handleInputChange} onFocus={() => { setShowDatePicker(false); setShowTimePicker(false); }} placeholder="Complemento / Apartamento" className="w-full bg-white border border-gray-200/60 focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary/40 rounded-xl py-3 px-4 text-base font-display font-medium text-gray-700 placeholder:text-gray-400 transition-all shadow-sm" />
                 </div>
-                {isStep1Complete && <button onClick={() => setIsEditingAddress(false)} className="w-full bg-primary text-white font-medium py-3 rounded-xl text-base active:scale-95 transition-all shadow-md shadow-primary/20">Salvar Dados</button>}
+                {userData && (
+                  <label className="flex items-center gap-3 cursor-pointer group select-none">
+                    <div
+                      onClick={() => setSaveAsDefault(v => !v)}
+                      className={`w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 transition-all ${saveAsDefault ? 'bg-primary border-primary' : 'border-gray-300 bg-white group-hover:border-primary/40'}`}
+                    >
+                      {saveAsDefault && <Check className="w-3 h-3 text-white" />}
+                    </div>
+                    <span className="text-sm font-medium text-gray-600">Salvar como endereço padrão</span>
+                  </label>
+                )}
               </div>
-            ) : (
-              <div
-                onClick={() => setIsEditingAddress(true)}
-                className="flex items-start gap-4 animate-fade-in p-1 cursor-pointer group"
-              >
-                <div className="w-12 h-12 rounded-xl bg-[#E8EDF2] flex items-center justify-center shrink-0 mt-0.5 overflow-hidden border border-gray-100/50 shadow-sm relative">
-                  <svg viewBox="0 0 100 100" className="w-full h-full object-cover scale-110" preserveAspectRatio="none">
-                    <path d="M0,0 L100,0 L100,100 L0,100 Z" fill="#E8EDF2" />
-                    <path d="M10,20 L30,25 L25,40 L5,35 Z" fill="#A7D2B0" />
-                    <path d="M60,10 L90,15 L85,30 L55,25 Z" fill="#A7D2B0" />
-                    <path d="M40,60 L70,55 L80,75 L45,80 Z" fill="#A7D2B0" />
-                    <path d="M15,70 L30,65 L35,85 L20,90 Z" fill="#A7D2B0" />
-                    <path d="M-5,15 L40,30 L60,20 L105,25" stroke="#F39C72" strokeWidth="4" fill="none" />
-                    <path d="M40,30 L50,60 L90,50 L105,60" stroke="#F39C72" strokeWidth="4" fill="none" />
-                    <path d="M50,60 L30,90 L-5,80" stroke="#F39C72" strokeWidth="4" fill="none" />
-                    <path d="M20,-5 L20,30" stroke="#F39C72" strokeWidth="4" fill="none" />
-                    <path d="M80,-5 L75,40" stroke="#F39C72" strokeWidth="4" fill="none" />
-                    <path d="M30,90 L40,105" stroke="#F39C72" strokeWidth="4" fill="none" />
-                    <path d="M70,55 L75,105" stroke="#F39C72" strokeWidth="4" fill="none" />
-                  </svg>
-                </div>
-                <div className="flex-1 text-left">
-                  <p className="font-semibold text-gray-900 leading-tight text-base md:text-lg">
-                    {deliveryMethod === 'entrega' ? formData.address : 'Retirada na Padaria'}
-                  </p>
-                  {deliveryMethod === 'entrega' && (
-                    <p className="text-sm text-gray-400 font-medium mt-1">
-                      {formData.complement || formData.cep}
-                    </p>
-                  )}
-                </div>
-                <ChevronRight className="w-5 h-5 text-gray-300 mt-2 group-hover:text-primary transition-all" />
-              </div>
-            )}
-          </section>
+            </section>
+          )}
 
           <section className="bg-white rounded-xl border border-gray-100 p-5 md:p-6 relative z-0 text-left transition-all">
             <div className="flex justify-between items-center text-left mb-2">

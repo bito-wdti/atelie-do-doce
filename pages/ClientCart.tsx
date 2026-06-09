@@ -220,7 +220,14 @@ export default function ClientCart() {
               </div>
 
               <button
-                onClick={() => navigate('/checkout')}
+                onClick={() => {
+                  const isLoggedIn = !!localStorage.getItem('userToken');
+                  if (isLoggedIn) {
+                    navigate('/checkout');
+                  } else {
+                    navigate('/login', { state: { from: '/checkout' } });
+                  }
+                }}
                 className="w-full bg-primary hover:brightness-110 active:scale-95 transition-all text-white py-4 rounded-xl font-medium shadow-none text-base md:text-lg flex items-center justify-center gap-2"
               >
                 <span>Próximo</span>

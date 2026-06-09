@@ -21,6 +21,7 @@ import AdminLogin from './pages/AdminLogin';
 import ClientLogin from './pages/ClientLogin';
 import Register from './pages/Register';
 import UserProfile from './pages/UserProfile';
+import UserSettings from './pages/UserSettings';
 import AdminFinance from './pages/AdminFinance';
 import AdminTransactions from './pages/AdminTransactions';
 
@@ -447,6 +448,7 @@ export default function App() {
 
         <Route path="/login" element={<ClientLogin />} />
         <Route path="/profile" element={<ClientLayout><UserProfile /></ClientLayout>} />
+        <Route path="/profile/settings" element={<ClientLayout><UserSettings /></ClientLayout>} />
         <Route path="/admin/login" element={<AdminLogin />} />
         <Route path="/register" element={<Register />} />
         <Route path="/admin" element={<AdminProtectedRoute><AdminLayout><AdminDashboard /></AdminLayout></AdminProtectedRoute>} />

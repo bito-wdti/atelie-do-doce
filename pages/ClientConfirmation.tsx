@@ -201,8 +201,19 @@ export default function ClientConfirmation() {
                       <MapPin className="w-4 h-4 text-gray-400 mt-1 shrink-0" />
                       <div>
                         <p className="text-sm text-gray-600 font-medium leading-relaxed">
-                          {checkoutData.address}, {checkoutData.number}<br />
-                          {checkoutData.neighborhood} - {checkoutData.cep}
+                          {(() => {
+                            let street = (checkoutData.address || '').trim();
+                            if (checkoutData.number && street.includes(`, ${checkoutData.number}`)) {
+                              street = street.substring(0, street.indexOf(`, ${checkoutData.number}`));
+                            }
+                            if (checkoutData.neighborhood && street.endsWith(` - ${checkoutData.neighborhood}`)) {
+                              street = street.slice(0, -(` - ${checkoutData.neighborhood}`).length);
+                            }
+                            street = street.replace(/[,\s]+$/, '').trim();
+                            return `${street}, ${checkoutData.number}`;
+                          })()}
+                          <br />
+                          {checkoutData.neighborhood} - CEP: {checkoutData.cep}
                           {checkoutData.complement && <span className="block italic text-gray-400 mt-1">({checkoutData.complement})</span>}
                         </p>
                       </div>
