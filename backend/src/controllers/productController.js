@@ -1,5 +1,5 @@
 import { ProductModel } from '../models/productModel.js'
-import { cleanString, positiveNumber } from '../utils/validation.js'
+import { cleanString, positiveNumber, positiveInteger } from '../utils/validation.js'
 
 const STOCK_STATUSES = ['Em estoque', 'Disponivel', 'Disponível', 'Indisponivel', 'Indisponível', 'Esgotado']
 
@@ -18,9 +18,14 @@ function validateProductPayload(body, { partial = false } = {}) {
   }
 
   if (body.stock !== undefined) {
-    payload.stock = cleanString(body.stock, { max: 40 })
-    if (payload.stock && !STOCK_STATUSES.includes(payload.stock)) {
-      throw new Error('Status de estoque invalido')
+    // aceitar tanto quantidade numérica quanto status textual
+    if (typeof body.stock === 'number' || /^\d+$/.test(String(body.stock))) {
+      payload.stock = positiveInteger(body.stock, { min: 0, max: 999999 })
+    } else {
+      payload.stock = cleanString(body.stock, { max: 40 })
+      if (payload.stock && !STOCK_STATUSES.includes(payload.stock)) {
+        throw new Error('Status de estoque invalido')
+      }
     }
   }
 

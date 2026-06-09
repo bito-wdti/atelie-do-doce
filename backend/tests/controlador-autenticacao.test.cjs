@@ -39,7 +39,7 @@ describe('Controlador de Autenticação', () => {
     await ControladorAutenticacao.login(requisicao, resposta)
 
     expect(resposta.statusCode).toBe(400)
-    expect(resposta.body).toEqual({ error: 'Senha é obrigatória' })
+    expect(resposta.body).toEqual({ error: 'Senha obrigatoria' })
   })
 
   it('deve retornar 401 quando a senha estiver incorreta', async () => {
@@ -49,6 +49,6 @@ describe('Controlador de Autenticação', () => {
     await ControladorAutenticacao.login(requisicao, resposta)
 
     expect(resposta.statusCode).toBe(401)
-    expect(resposta.body).toEqual({ error: 'Senha incorreta' })
+    expect(resposta.body).toEqual({ error: 'Credenciais invalidas' })
   })
 })

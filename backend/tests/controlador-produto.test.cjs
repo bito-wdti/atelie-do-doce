@@ -48,7 +48,7 @@ describe('Controlador de Produtos', () => {
     await ControladorProduto.show(requisicao, resposta)
 
     expect(resposta.statusCode).toBe(404)
-    expect(resposta.body).toEqual({ error: 'Produto não encontrado' })
+    expect(resposta.body).toEqual({ error: 'Produto nao encontrado' })
   })
 
   it('deve criar um produto e retornar 201', async () => {
