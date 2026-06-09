@@ -214,8 +214,6 @@ export interface OrderItem {
 }
 
 export interface CreateOrderPayload {
-  customer_name: string
-  customer_phone?: string
   total_amount: number
   payment_method?: string
   delivery_address?: string

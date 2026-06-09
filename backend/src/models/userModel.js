@@ -30,10 +30,10 @@ export const userModel = {
     },
 
     // Criar novo usuário
-    async create({ name, email, password, role = 'Cliente', avatar_url = null }) {
+    async create({ name, email, password, cpf, telefone, role = 'Cliente', avatar_url = null }) {
         const { data, error } = await supabase
             .from('users')
-            .insert([{ name, email, password, role, avatar_url }])
+            .insert([{ name, email, password, cpf, telefone, role, avatar_url }])
             .select()
 
         if (error) {

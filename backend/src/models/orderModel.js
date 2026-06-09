@@ -6,6 +6,7 @@ export const OrderModel = {
       .from('orders')
       .select(`
         *,
+        user:users (id, name, email, telefone),
         order_items (
           id,
           quantity,
@@ -25,9 +26,9 @@ export const OrderModel = {
     if (search) {
       const term = String(search).trim()
       if (/^\d+$/.test(term)) {
-        query = query.or(`id.eq.${term},customer_name.ilike.%${term}%`)
+        query = query.eq('id', Number(term))
       } else {
-        query = query.ilike('customer_name', `%${term}%`)
+        query = query.ilike('users.name', `%${term}%`)
       }
     }
 
@@ -51,6 +52,7 @@ export const OrderModel = {
       .from('orders')
       .select(`
         *,
+        user:users (id, name, email, telefone),
         order_items (
           id,
           quantity,
@@ -67,12 +69,11 @@ export const OrderModel = {
     return data
   },
 
-  async create({ customer_name, customer_phone, total_amount, status, payment_method, delivery_address, notes, items }) {
+  async create({ user_id, total_amount, status, payment_method, delivery_address, notes, items }) {
     const { data: order, error: orderError } = await supabase
       .from('orders')
       .insert([{
-        customer_name,
-        customer_phone,
+        user_id,
         total_amount,
         status: status || 'Pendente',
         payment_method,

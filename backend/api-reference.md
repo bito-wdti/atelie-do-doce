@@ -197,15 +197,14 @@ DELETE /api/products/12
 
 ## PEDIDOS
 
-### POST /orders
-Cliente finaliza a compra. Cria o pedido e os itens juntos numa única chamada.
+### POST /orders 🔒
+Cliente autenticado finaliza a compra. Cria o pedido e os itens juntos numa única chamada. O `user_id` é extraído automaticamente do token JWT — não enviar no body.
+
+**Headers obrigatórios:** `Authorization: Bearer <token>`
 
 **Body:**
 ```json
 {
-  "customer_name": "Maria Silva",
-  "customer_phone": "(84) 99999-1234",
-  "total_amount": 89.90,
   "payment_method": "Cartão de Crédito",
   "delivery_address": "Rua das Flores, 123, Ap 4 - Tirol, Natal/RN",
   "notes": "Sem amendoim por favor",
@@ -226,14 +225,14 @@ Cliente finaliza a compra. Cria o pedido e os itens juntos numa única chamada.
 }
 ```
 
-**Campos obrigatórios:** `customer_name`, `total_amount`, `items`
+**Campos obrigatórios:** `delivery_address`, `items`
 
 **Resposta (201):**
 ```json
 {
   "id": 47,
-  "customer_name": "Maria Silva",
-  "customer_phone": "(84) 99999-1234",
+  "user_id": "9bcbbbed-d17a-4546-baab-f2557539a782",
+  "user": { "id": "9bcbbbed-d17a-4546-baab-f2557539a782", "name": "Maria Silva", "email": "maria@email.com", "telefone": "(84) 99999-1234" },
   "total_amount": 89.90,
   "status": "Pendente",
   "payment_method": "Cartão de Crédito",
@@ -292,7 +291,8 @@ GET /api/orders?status=Entregue&startDate=2025-04-01
 [
   {
     "id": 47,
-    "customer_name": "Maria Silva",
+    "user_id": "9bcbbbed-d17a-4546-baab-f2557539a782",
+    "user": { "id": "9bcbbbed-d17a-4546-baab-f2557539a782", "name": "Maria Silva", "email": "maria@email.com", "telefone": "(84) 99999-1234" },
     "total_amount": 89.90,
     "status": "Pendente",
     "created_at": "2025-04-27T14:30:00Z",
@@ -350,7 +350,7 @@ PATCH /api/orders/47/status
 {
   "id": 47,
   "status": "Em Preparo",
-  "customer_name": "Maria Silva",
+  "user": { "name": "Maria Silva" },
   "..." : "..."
 }
 ```

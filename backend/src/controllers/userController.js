@@ -20,7 +20,7 @@ export const userController = {
   // POST /api/users
   async createUser(req, res) {
     try {
-      const { name, email, password, role, avatar_url } = req.body
+      const { name, email, password, cpf, telefone, role, avatar_url } = req.body
 
       if (!name || !email || !password) {
         return res.status(400).json({ error: 'Nome, email e senha são obrigatórios' })
@@ -33,6 +33,8 @@ export const userController = {
         name,
         email,
         password: hashedPassword,
+        cpf,
+        telefone,
         role,
         avatar_url
       })

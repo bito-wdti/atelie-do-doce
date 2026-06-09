@@ -109,16 +109,14 @@ export const OrderController = {
 
   async create(req, res) {
     try {
-      const customer_name = cleanString(req.body.customer_name, { max: 120, required: true })
-      const customer_phone = cleanString(req.body.customer_phone, { max: 30 })
+      const user_id = req.user.id
       const delivery_address = cleanString(req.body.delivery_address, { max: 500, required: true })
       const payment_method = normalizePaymentMethod(req.body.payment_method)
       const notes = cleanString(req.body.notes, { max: 800 })
       const { items, total_amount } = await buildOrderItems(req.body.items, delivery_address)
 
       const order = await OrderModel.create({
-        customer_name,
-        customer_phone,
+        user_id,
         total_amount,
         payment_method,
         delivery_address,

@@ -1,10 +1,10 @@
 import { Router } from 'express'
 import { OrderController } from '../controllers/orderController.js'
-import { optionalAdmin, requireAdmin } from '../middlewares/authMiddleware.js'
+import { optionalAdmin, requireAdmin, requireAuth } from '../middlewares/authMiddleware.js'
 
 const router = Router()
 
-router.post('/', OrderController.create)
+router.post('/', requireAuth, OrderController.create)
 
 router.get('/', requireAdmin, OrderController.index)
 router.get('/metrics/summary', requireAdmin, OrderController.metrics)
